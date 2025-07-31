@@ -252,7 +252,7 @@
 {
   "status": "Success",
   "message": {...},
-  "pdf_data": "base64_encoded_pdf_data_here",
+  "pdf_base64": "base64_encoded_pdf_data_here",
   "pdf_filename": "example.pdf",
   "file_type": "pdf"
 }'
@@ -363,12 +363,12 @@
             const data = JSON.parse(jsonText);
 
             // Validate required fields
-            if (!data.pdf_data) {
-              throw new Error("No pdf_data field found in JSON");
+            if (!data.pdf_base64) {
+              throw new Error("No pdf_base64 field found in JSON");
             }
 
             // Extract PDF data
-            const pdfData = data.pdf_data;
+            const pdfData = data.pdf_base64;
             const filename = data.pdf_filename || "extracted_document.pdf";
             const fileType = data.file_type || "pdf";
 
