@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON to PDF Extractor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        padding: 30px;
+        text-align: center;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .main-content {
+        padding: 40px;
+      }
+
+      .input-section {
+        margin-bottom: 30px;
+      }
+
+      .input-label {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      .json-input {
+        width: 100%;
+        min-height: 200px;
+        padding: 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        resize: vertical;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+      }
+
+      .json-input:focus {
+        outline: none;
+        border-color: #4facfe;
+        box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        background: white;
+      }
+
+      .json-input::placeholder {
+        color: #999;
+        font-style: italic;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(245, 87, 108, 0.3);
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 8px;
+        font-weight: 500;
+        display: none;
+      }
+
+      .status.success {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        color: #2d5a27;
+        border-left: 4px solid #4caf50;
+      }
+
+      .status.error {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        color: #8b2635;
+        border-left: 4px solid #f44336;
+      }
+
+      .pdf-section {
+        margin-top: 40px;
+        display: none;
+      }
+
+      .pdf-info {
+        background: linear-gradient(135deg, #e3ffe7 0%, #d9e7ff 100%);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #4caf50;
+      }
+
+      .pdf-info h3 {
+        color: #2d5a27;
+        margin-bottom: 10px;
+        font-size: 1.3rem;
+      }
+
+      .pdf-viewer {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        background: white;
+      }
+
+      .pdf-viewer iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+      }
+
+      .download-section {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .loading {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .main-content {
+          padding: 20px;
+        }
+
+        .button-group {
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📄 JSON to PDF Extractor</h1>
+        <p>Paste your JSON data to extract and view PDF files instantly</p>
+      </div>
+
+      <div class="main-content">
+        <div class="input-section">
+          <label for="jsonInput" class="input-label"
+            >Paste your JSON data here:</label
+          >
+          <textarea
+            id="jsonInput"
+            class="json-input"
+            placeholder='Paste your JSON here, e.g.:
+{
+  "status": "Success",
+  "message": {...},
+  "pdf_data": "base64_encoded_pdf_data_here",
+  "pdf_filename": "example.pdf",
+  "file_type": "pdf"
+}'
+          ></textarea>
+
+          <div class="button-group">
+            <button id="extractBtn" class="btn btn-primary">
+              🔍 Extract PDF
+            </button>
+            <button id="clearBtn" class="btn btn-secondary">🗑️ Clear</button>
+          </div>
+
+          <div id="status" class="status"></div>
+        </div>
+
+        <div id="pdfSection" class="pdf-section">
+          <div class="pdf-info">
+            <h3>📋 PDF Information</h3>
+            <div id="pdfInfo"></div>
+          </div>
+
+          <div class="pdf-viewer">
+            <iframe id="pdfFrame" title="PDF Viewer"></iframe>
+          </div>
+
+          <div class="download-section">
+            <button id="downloadBtn" class="btn btn-primary">
+              💾 Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class PDFExtractor {
+        constructor() {
+          this.initializeElements();
+          this.bindEvents();
+        }
+
+        initializeElements() {
+          this.jsonInput = document.getElementById("jsonInput");
+          this.extractBtn = document.getElementById("extractBtn");
+          this.clearBtn = document.getElementById("clearBtn");
+          this.status = document.getElementById("status");
+          this.pdfSection = document.getElementById("pdfSection");
+          this.pdfInfo = document.getElementById("pdfInfo");
+          this.pdfFrame = document.getElementById("pdfFrame");
+          this.downloadBtn = document.getElementById("downloadBtn");
+
+          this.currentPdfData = null;
+          this.currentFilename = null;
+        }
+
+        bindEvents() {
+          this.extractBtn.addEventListener("click", () => this.extractPDF());
+          this.clearBtn.addEventListener("click", () => this.clearAll());
+          this.downloadBtn.addEventListener("click", () => this.downloadPDF());
+
+          // Auto-extract when pasting
+          this.jsonInput.addEventListener("paste", () => {
+            setTimeout(() => this.extractPDF(), 100);
+          });
+
+          // Enter key to extract
+          this.jsonInput.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+              this.extractPDF();
+            }
+          });
+        }
+
+        showStatus(message, type) {
+          this.status.textContent = message;
+          this.status.className = `status ${type}`;
+          this.status.style.display = "block";
+          this.status.classList.add("fade-in");
+        }
+
+        hideStatus() {
+          this.status.style.display = "none";
+        }
+
+        showLoading() {
+          this.extractBtn.disabled = true;
+          this.extractBtn.innerHTML =
+            '<span class="loading">⏳</span> Processing...';
+        }
+
+        hideLoading() {
+          this.extractBtn.disabled = false;
+          this.extractBtn.innerHTML = "🔍 Extract PDF";
+        }
+
+        extractPDF() {
+          const jsonText = this.jsonInput.value.trim();
+
+          if (!jsonText) {
+            this.showStatus("Please paste your JSON data first.", "error");
+            return;
+          }
+
+          this.showLoading();
+
+          try {
+            // Parse JSON
+            const data = JSON.parse(jsonText);
+
+            // Validate required fields
+            if (!data.pdf_data) {
+              throw new Error("No pdf_data field found in JSON");
+            }
+
+            // Extract PDF data
+            const pdfData = data.pdf_data;
+            const filename = data.pdf_filename || "extracted_document.pdf";
+            const fileType = data.file_type || "pdf";
+
+            // Validate base64 data
+            if (!this.isValidBase64(pdfData)) {
+              throw new Error("Invalid base64 PDF data");
+            }
+
+            // Store current data
+            this.currentPdfData = pdfData;
+            this.currentFilename = filename;
+
+            // Create blob and object URL
+            const byteCharacters = atob(pdfData);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: "application/pdf" });
+            const pdfUrl = URL.createObjectURL(blob);
+
+            // Display PDF info
+            this.displayPDFInfo(data);
+
+            // Load PDF in iframe
+            this.pdfFrame.src = pdfUrl;
+
+            // Show PDF section
+            this.pdfSection.style.display = "block";
+            this.pdfSection.classList.add("fade-in");
+
+            this.showStatus(
+              `✅ PDF extracted successfully! File: ${filename}`,
+              "success"
+            );
+          } catch (error) {
+            this.showStatus(`❌ Error: ${error.message}`, "error");
+            this.pdfSection.style.display = "none";
+          } finally {
+            this.hideLoading();
+          }
+        }
+
+        displayPDFInfo(data) {
+          const info = [];
+
+          if (data.pdf_filename) {
+            info.push(`<strong>📎 Filename:</strong> ${data.pdf_filename}`);
+          }
+
+          if (data.file_type) {
+            info.push(
+              `<strong>📄 File Type:</strong> ${data.file_type.toUpperCase()}`
+            );
+          }
+
+          if (data.status) {
+            info.push(`<strong>✅ Status:</strong> ${data.status}`);
+          }
+
+          // Estimate file size
+          const sizeKB = Math.round(
+            (this.currentPdfData.length * 3) / 4 / 1024
+          );
+          info.push(`<strong>📊 Estimated Size:</strong> ${sizeKB} KB`);
+
+          this.pdfInfo.innerHTML = info.join("<br>");
+        }
+
+        downloadPDF() {
+          if (!this.currentPdfData || !this.currentFilename) {
+            this.showStatus("No PDF data available for download.", "error");
+            return;
+          }
+
+          try {
+            const byteCharacters = atob(this.currentPdfData);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: "application/pdf" });
+
+            // Create download link
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = this.currentFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            this.showStatus("📥 PDF downloaded successfully!", "success");
+          } catch (error) {
+            this.showStatus(`❌ Download failed: ${error.message}`, "error");
+          }
+        }
+
+        clearAll() {
+          this.jsonInput.value = "";
+          this.pdfSection.style.display = "none";
+          this.hideStatus();
+          this.currentPdfData = null;
+          this.currentFilename = null;
+
+          // Clear iframe
+          this.pdfFrame.src = "";
+        }
+
+        isValidBase64(str) {
+          try {
+            return btoa(atob(str)) === str;
+          } catch (err) {
+            return false;
+          }
+        }
+      }
+
+      // Initialize the application
+      document.addEventListener("DOMContentLoaded", () => {
+        new PDFExtractor();
+      });
+    </script>
+  </body>
+</html>
